@@ -1,0 +1,40 @@
+using UnityEngine;
+
+/// <summary>
+///脚本：StoveBurnWarningUI.cs
+///时间：2023.9.26
+///功能：
+/// </summary>
+
+public class StoveBurnWarningUI : MonoBehaviour
+{
+    [SerializeField] private StoveCounter stoveCounter;
+
+    private void Start()
+    {
+        stoveCounter.OnProgressChanged += StoveCounter_OnProgressChanged;
+
+        Hide();
+    }
+
+    private void StoveCounter_OnProgressChanged(object sender, IHasProgress.OnProgressChangeEventArgs e)
+    {
+        float burnShowProgressAmount = .5f;
+        bool show = stoveCounter.IsFried && e.progressNormalized >= burnShowProgressAmount;
+
+        if (show)
+            Show();
+        else
+            Hide();
+    }
+
+    private void Show()
+    {
+        gameObject.SetActive(true);
+    }
+
+    private void Hide()
+    {
+        gameObject.SetActive(false);
+    }
+}
