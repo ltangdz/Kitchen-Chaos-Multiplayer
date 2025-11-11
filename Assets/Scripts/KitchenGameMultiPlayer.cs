@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,6 +20,8 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
 {
     public const int MAX_PLAYER_AMOUNT = 4;
     private const string PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER = "PlayerNameMultiPlayer";
+    
+    // public static bool isMultiPlayer = false;
 
     public event EventHandler OnPlayerDataNetworkListChanged;
 
@@ -36,6 +42,28 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
         playerDataNetworkList = new NetworkList<PlayerData>();
         playerDataNetworkList.OnListChanged += PlayerDataNetworkList_OnListChanged;
     }
+
+    /// <summary>
+    /// 处理单人模式
+    /// </summary>
+    // private void Start()
+    // {
+    //     try
+    //     {
+    //         if (!isMultiPlayer)
+    //         {
+    //             // 因为UnityTransport.ProtocolType为Relay 所以StartHost之前必须SetRelayServerData 不然报错
+    //             // NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData();
+    //             
+    //             StartHost();
+    //             Loader.LoadNetwork(Loader.Scene.GameScene);
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Debug.LogException(ex);
+    //     }
+    // }
 
     private void PlayerDataNetworkList_OnListChanged(NetworkListEvent<PlayerData> changeevent)
     {
@@ -73,7 +101,7 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
         
         NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Server_OnClientDisconnectCallback;
-
+        
         NetworkManager.Singleton.StartHost();
     }
 

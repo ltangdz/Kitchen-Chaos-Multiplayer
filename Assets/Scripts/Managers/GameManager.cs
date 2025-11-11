@@ -10,10 +10,8 @@ using UnityEngine.SceneManagement;
 ///功能：
 /// </summary>
 
-public class GameManager : NetworkBehaviour
+public class GameManager : SingletonNetwork<GameManager>
 {
-    public static GameManager Instance { get; private set; }
-
     public event EventHandler OnStateChanged;
     public event EventHandler OnLocalGamePaused;
     public event EventHandler OnLocalGameUnpaused;
@@ -37,7 +35,7 @@ public class GameManager : NetworkBehaviour
     private bool isLocalPlayerReady;
     private NetworkVariable<float> countDownToStartTimer = new NetworkVariable<float>(3f);      // 游戏开始 倒数计时器 自动同步
     private NetworkVariable<float> gamePlayingTimer = new NetworkVariable<float>(0f);           // 游戏剩余时间
-    [SerializeField] private float gamePlayingTimerMax = 10f;
+    [SerializeField] private float gamePlayingTimerMax = 180f;
     private bool isLocalGamePaused = false;
     private NetworkVariable<bool> isGamePaused = new NetworkVariable<bool>(false);              // 是否暂停 所有客户端同步
     private Dictionary<ulong, bool> playerReadyDictionary;
@@ -46,10 +44,10 @@ public class GameManager : NetworkBehaviour
     
     [SerializeField] private Transform playerPrefab;
 
-    private void Awake()
+    protected override void Awake()
     {
-        Instance = this;
-
+        base.Awake();
+        
         playerReadyDictionary = new Dictionary<ulong, bool>();
         playerPausedDictionary= new Dictionary<ulong, bool>();
     }

@@ -1,3 +1,5 @@
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -10,20 +12,26 @@ using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
 {
-    [SerializeField] private Button playButton; 
+    [SerializeField] private Button multiPlayerButton; 
+    [SerializeField] private Button singlePlayButton; 
     [SerializeField] private Button quitButton;
 
     private void Awake()
     {
-        playButton.onClick.AddListener(() =>
+        multiPlayerButton.onClick.AddListener(() =>
         {
-            // Loader.Load(Loader.Scene.GameScene);
+            // KitchenGameMultiPlayer.isMultiPlayer = true;
             Loader.Load(Loader.Scene.LobbyScene);
         });
-        quitButton.onClick.AddListener(() =>
-        {
-            Application.Quit();
-        });
+
+        // 需要更改传输层 目前有问题
+        // singlePlayButton.onClick.AddListener(() =>
+        // {
+        //     KitchenGameMultiPlayer.isMultiPlayer = false;
+        //     Loader.Load(Loader.Scene.LobbyScene);
+        // });
+        
+        quitButton.onClick.AddListener(Application.Quit);
 
         Time.timeScale = 1f;
     }
