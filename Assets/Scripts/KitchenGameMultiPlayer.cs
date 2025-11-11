@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Random = UnityEngine.Random;
 
 /// <summary>
 ///脚本：KitchenGameMultiPlayer.cs
@@ -12,7 +14,8 @@ using UnityEngine.SceneManagement;
 
 public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
 {
-    private const int MAX_PLAYER_AMOUNT = 4;
+    public const int MAX_PLAYER_AMOUNT = 4;
+    private const string PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER = "PlayerNameMultiPlayer";
 
     public event EventHandler OnPlayerDataNetworkListChanged;
 
@@ -20,11 +23,15 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
     [SerializeField] private List<Color> playerColorList;
     
     private NetworkList<PlayerData> playerDataNetworkList;
+    private string playerName;
+    
     protected override void Awake()
     {
         base.Awake();
         
         DontDestroyOnLoad(this);
+        
+        playerName = PlayerPrefs.GetString(PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER, "PlayerName" + Random.Range(100, 1000));
         
         playerDataNetworkList = new NetworkList<PlayerData>();
         playerDataNetworkList.OnListChanged += PlayerDataNetworkList_OnListChanged;
@@ -33,6 +40,18 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
     private void PlayerDataNetworkList_OnListChanged(NetworkListEvent<PlayerData> changeevent)
     {
         OnPlayerDataNetworkListChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public string GetPlayerName()
+    {
+        return playerName;
+    }
+
+    public void SetPlayerName(string playerName)
+    {
+        this.playerName = playerName;
+        
+        PlayerPrefs.SetString(PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER, playerName);
     }
 
 
@@ -77,6 +96,9 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
             clientId = clientId,
             colorId = GetFirstUnusedColorId(),
         });
+        
+        SetPlayerNameServerRpc(GetPlayerName());
+        SetPlayerIdServerRpc(AuthenticationService.Instance.PlayerId);
     }
 
     private void NetworkManager_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest connectionApprovalRequest, NetworkManager.ConnectionApprovalResponse connectionApprovalResponse)
@@ -114,10 +136,33 @@ public class KitchenGameMultiPlayer : SingletonNetwork<KitchenGameMultiPlayer>
     {
         NetworkManager.Singleton.StartClient();
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Client_OnClientDisconnectCallback;
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_Client_OnClientConnectedCallback;
+    }
+
+    private void NetworkManager_Client_OnClientConnectedCallback(ulong clientId)
+    {
+        SetPlayerNameServerRpc(GetPlayerName());
+        SetPlayerIdServerRpc(AuthenticationService.Instance.PlayerId);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetPlayerNameServerRpc(string playerName, ServerRpcParams serverRpcParams = default)
+    {
+        int playerDataIndex = GetPlayerIndexFromClientId(serverRpcParams.Receive.SenderClientId);
+        PlayerData playerData = playerDataNetworkList[playerDataIndex];
+        playerData.playerName = playerName;
+        playerDataNetworkList[playerDataIndex] = playerData;
     }
     
-    
-    private void NetworkManager_Client_OnClientDisconnectCallback(ulong obj)
+    [ServerRpc(RequireOwnership = false)]
+    private void SetPlayerIdServerRpc(string playerId, ServerRpcParams serverRpcParams = default)
+    {
+        int playerDataIndex = GetPlayerIndexFromClientId(serverRpcParams.Receive.SenderClientId);
+        PlayerData playerData = playerDataNetworkList[playerDataIndex];
+        playerData.playerId = playerId;
+        playerDataNetworkList[playerDataIndex] = playerData;
+    }
+    private void NetworkManager_Client_OnClientDisconnectCallback(ulong clientId)
     {
         string reason = NetworkManager.Singleton.DisconnectReason;
         Debug.Log($"断开连接 原因: {(reason == "" ? "服务器断开连接" : reason)}");

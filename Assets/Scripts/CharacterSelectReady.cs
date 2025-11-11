@@ -42,6 +42,8 @@ public class CharacterSelectReady : SingletonNetwork<CharacterSelectReady>
         Debug.Log("allClientReady:" + allClientReady);
         if (allClientReady)
         {
+            // 游戏开始时 把所有玩家从大厅清除 释放资源
+            KitchenGameLobby.Instance.DeleteLobby();
             Loader.LoadNetwork(Loader.Scene.GameScene);
         }
     }
